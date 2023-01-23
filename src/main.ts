@@ -1,33 +1,39 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
 
 // Remember to rename these classes and interfaces!
 
 interface ObsidianUtilityBeltSettings {
-	mySetting: string;
+	peekIgnore: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianUtilityBeltSettings = {
-	mySetting: "default",
+	peekIgnore: "",
 };
 
 export default class ObsidianUtilityBelt extends Plugin {
 	settings: ObsidianUtilityBeltSettings;
+	ignores: string[];
 
 	async onload() {
 		await this.loadSettings();
-
+		this.ignores = this.settings.peekIgnore.split(",");
 		const _app = this.app;
+		const _that = this;
 		this.app.workspace.on("file-open", function (file) {
-			if (file) {
-				console.log(file.name, " was opened");
-				_app.fileManager.processFrontMatter(
-					file,
-					(frontmatter: any) => {
-						frontmatter["peeked"] = window
-							.moment()
-							.format("YYYY-MM-DD");
-					}
-				);
+			try {
+				if (file && !_that.isFilePeekIgnored(file)) {
+					console.log(file.name, " was opened");
+					_app.fileManager.processFrontMatter(
+						file,
+						(frontmatter: any) => {
+							frontmatter["peeked"] = window
+								.moment()
+								.format("YYYY-MM-DD");
+						}
+					);
+				}
+			} catch (e) {
+				console.log("Ignoring file for peek");
 			}
 		});
 
@@ -48,6 +54,18 @@ export default class ObsidianUtilityBelt extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	isFilePeekIgnored(file: TFile | null): boolean {
+		if (file == null) {
+			return false;
+		}
+		this.ignores.forEach(function (ignore) {
+			if (file.path.includes(ignore)) {
+				throw new Error("Ignore");
+			}
+		});
+		return false;
+	}
 }
 
 class ObsidianUtilityBeltSettingTab extends PluginSettingTab {
@@ -63,18 +81,19 @@ class ObsidianUtilityBeltSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Settings for my awesome plugin." });
+		containerEl.createEl("h2", { text: "File Peek Settings." });
 
 		new Setting(containerEl)
-			.setName("Setting #1")
-			.setDesc("It's a secret")
+			.setName("Paths to Ignore")
+			.setDesc(
+				"Comma separated list of file paths to ignore when setting peek date"
+			)
 			.addText((text) =>
 				text
-					.setPlaceholder("Enter your secret")
-					.setValue(this.plugin.settings.mySetting)
+					.setPlaceholder("daily_notes,templates")
+					.setValue(this.plugin.settings.peekIgnore)
 					.onChange(async (value) => {
-						console.log("Secret: " + value);
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.peekIgnore = value;
 						await this.plugin.saveSettings();
 					})
 			);
