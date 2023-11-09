@@ -12,6 +12,12 @@
 	"author": "John Christopher",
 	"license": "MIT",
 	"devDependencies": {
+		"@tsconfig/svelte": "3.0.0",
+		"esbuild-svelte": "^0.7.3",
+		"svelte": "3.55.1",
+		"svelte-eslint-parser": "^0.23.0",
+		"svelte-writable-derived": "^3.1.0",
+		"svelte-preprocess": "5.0.1",
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",

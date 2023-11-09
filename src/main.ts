@@ -1,14 +1,8 @@
-import { App, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
-
-// Remember to rename these classes and interfaces!
-
-interface ObsidianUtilityBeltSettings {
-	peekIgnore: string;
-}
-
-const DEFAULT_SETTINGS: ObsidianUtilityBeltSettings = {
-	peekIgnore: "",
-};
+import { App, Plugin, PluginSettingTab, TFile } from "obsidian";
+import SettingsComponent from "./settings/SettingsComponent.svelte";
+import { init } from "./settings/settingsstore";
+import type { SvelteComponent } from "svelte";
+import { ObsidianUtilityBeltSettings, DEFAULT_SETTINGS } from "./settingstypes";
 
 export default class ObsidianUtilityBelt extends Plugin {
 	settings: ObsidianUtilityBeltSettings;
@@ -16,7 +10,7 @@ export default class ObsidianUtilityBelt extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		this.ignores = this.settings.peekIgnore.split(",");
+		this.ignores = this.settings.level2settings[0].peekIgnore.split(",");
 		const _app = this.app;
 		const _that = this;
 		this.app.workspace.on("file-open", function (file) {
@@ -29,7 +23,7 @@ export default class ObsidianUtilityBelt extends Plugin {
 							frontmatter["peeked"] = window
 								.moment()
 								.format("YYYY-MM-DD");
-						}
+						},
 					);
 				}
 			} catch (e) {
@@ -47,7 +41,7 @@ export default class ObsidianUtilityBelt extends Plugin {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await this.loadData()
+			await this.loadData(),
 		);
 	}
 
@@ -70,10 +64,12 @@ export default class ObsidianUtilityBelt extends Plugin {
 
 class ObsidianUtilityBeltSettingTab extends PluginSettingTab {
 	plugin: ObsidianUtilityBelt;
+	private view: SvelteComponent;
 
 	constructor(app: App, plugin: ObsidianUtilityBelt) {
 		super(app, plugin);
 		this.plugin = plugin;
+		init(this.plugin);
 	}
 
 	display(): void {
@@ -81,21 +77,40 @@ class ObsidianUtilityBeltSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "File Peek Settings." });
-
-		new Setting(containerEl)
-			.setName("Paths to Ignore")
-			.setDesc(
-				"Comma separated list of file paths to ignore when setting peek date"
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("daily_notes,templates")
-					.setValue(this.plugin.settings.peekIgnore)
-					.onChange(async (value) => {
-						this.plugin.settings.peekIgnore = value;
-						await this.plugin.saveSettings();
-					})
-			);
+		this.view = new SettingsComponent({
+			target: containerEl,
+			props: {
+				app: this.app,
+			},
+		});
 	}
+
+	async hide() {
+		super.hide();
+		this.view.$destroy();
+	}
+
+	// display(): void {
+	// 	const { containerEl } = this;
+	//
+	// 	containerEl.empty();
+	//
+	// 	containerEl.createEl("h2", { text: "File Peek Settings." });
+	//
+	// 	new Setting(containerEl)
+	// 		.setName("Paths to Ignore")
+	// 		.setDesc(
+	// 			"Comma separated list of file paths to ignore when setting peek date",
+	// 		)
+	// 		.addText((text) =>
+	// 			text
+	// 				.setPlaceholder("daily_notes,templates")
+	// 				.setValue(this.plugin.settings.level2settings[0].peekIgnore)
+	// 				.onChange(async (value) => {
+	// 					this.plugin.settings.level2settings[0].peekIgnore =
+	// 						value;
+	// 					await this.plugin.saveSettings();
+	// 				}),
+	// 		);
+	// }
 }
