@@ -80,7 +80,7 @@ class ObsidianUtilityBeltSettingTab extends PluginSettingTab {
 		this.view = new SettingsComponent({
 			target: containerEl,
 			props: {
-				app: this.app,
+				plugin: this.plugin,
 			},
 		});
 	}
