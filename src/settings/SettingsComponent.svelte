@@ -1,36 +1,28 @@
 <script lang="ts">
-	import { Modal, Plugin } from "obsidian";
+	import { Modal } from "obsidian";
 	import { get } from "svelte/store";
 	import { settings } from "./settingsstore";
 	import { propertyStore } from "svelte-writable-derived";
 	import ModalComponent from "src/components/ModalComponent.svelte";
-	export let plugin: Plugin;
 
 	let level2settings = propertyStore(settings, "level2settings");
 
 	const handleClick = (settingsNumber: number) => {
-		const level2 = get(level2settings);
-		const settingsChosen = level2[settingsNumber];
+		const settingsChosenStore = propertyStore(settings, [
+			"level2settings",
+			settingsNumber,
+		]);
 		const settingsScreen = new Modal(this.app);
 		settingsScreen.titleEl.createEl("h2", {
-			text: settingsChosen.title,
+			text: get(settingsChosenStore).title,
 		});
 
 		new ModalComponent({
 			target: settingsScreen.contentEl,
 			props: {
-				chosenSetting: settingsChosen,
+				chosenSetting: settingsChosenStore,
 			},
 		});
-
-		settingsScreen.onClose = () => {
-			console.log("Settings when closing", settingsChosen);
-			level2[settingsNumber] = settingsChosen;
-			level2settings.set(level2);
-			plugin.saveData({
-				level2settings: get(level2settings),
-			});
-		};
 
 		settingsScreen.open();
 	};
